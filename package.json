@@ -1,0 +1,49 @@
+{
+  "name": "@oci/nextjs-template",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18 <19",
+    "npm": ">=8 <9"
+  },
+  "scripts": {
+    "dev": "NEXT_PUBLIC_APP_ENV=local next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint \"**/*.{ts,tsx,js,jsx}\"",
+    "type-check": "tsc --noEmit",
+    "lint-and-type-check": "npm run lint && npm run type-check"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.4.1",
+    "@opentelemetry/context-zone": "^1.14.0",
+    "@opentelemetry/core": "^1.14.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.38.0",
+    "@opentelemetry/instrumentation": "^0.35.1",
+    "@opentelemetry/opentelemetry-browser-detector": "^0.35.1",
+    "@opentelemetry/resources": "^1.14.0",
+    "@opentelemetry/sdk-trace-web": "^1.14.0",
+    "@opentelemetry/semantic-conventions": "^1.14.0",
+    "@tanstack/react-query": "^4.29.13",
+    "@tanstack/react-query-devtools": "^4.29.14",
+    "nanoid": "^4.0.1",
+    "next": "~13.5.6",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "swiper": "^11.0.3"
+  },
+  "devDependencies": {
+    "@next/bundle-analyzer": "^13.5.3",
+    "@types/node": "^18.11.18",
+    "@types/react": "18.0.17",
+    "autoprefixer": "^10.4.14",
+    "eslint": "^8.42.0",
+    "eslint-config-next": "12.2.4",
+    "eslint-config-oci-react": "https://github.com/orangecapinnovative/eslint-config-oci-react.git#v0.3.0",
+    "eslint-webpack-plugin": "^4.0.1",
+    "postcss": "^8.4.31",
+    "postcss-import": "^14.1.0",
+    "tailwindcss": "^3.3.2",
+    "typescript": "^5.1.3"
+  }
+}

@@ -1,0 +1,190 @@
+name: Features Development and Release
+
+on:
+  pull_request:
+    types: [labeled, closed]
+    branches-ignore:
+      - "dependabot/**"
+      - "snyk-fix-**"
+
+jobs:
+  set_constant:
+    name: Set constants
+    runs-on: ubuntu-latest
+    outputs:
+      LABEL_DEV: ${{ steps.constant.outputs.LABEL_DEV }}
+      GCP_PROJECT: ${{ steps.constant.outputs.GCP_PROJECT }}
+      GKE_CLUSTER_NAME: ${{ steps.constant.outputs.GKE_CLUSTER_NAME }}
+      GKE_CLUSTER_ZONE: ${{ steps.constant.outputs.GKE_CLUSTER_ZONE }}
+      KEY_SERVICE_ACCOUNT: ${{ steps.constant.outputs.KEY_SERVICE_ACCOUNT }}
+      APP_NAME: ${{ steps.constant.outputs.APP_NAME }}
+      APP_ENV: ${{ steps.constant.outputs.APP_ENV }}
+      TARGET_COMMIT_SHA: ${{ steps.constant.outputs.TARGET_COMMIT_SHA }}
+      GCR_REPO_HOST: ${{ steps.constant.outputs.GCR_REPO_HOST }}
+    steps:
+      - name: Set constant
+        id: constant
+        run: |-
+          echo ::set-output name=LABEL_DEV::'build to dev'
+          echo ::set-output name=GCP_PROJECT::'orange-cap-dev'
+          echo ::set-output name=GKE_CLUSTER_NAME::'oci-dev-cluster'
+          echo ::set-output name=GKE_CLUSTER_ZONE::'asia-southeast1-a'
+          echo ::set-output name=KEY_SERVICE_ACCOUNT::'OCI_SA_DEV'
+          echo ::set-output name=APP_NAME::'PLEASE_CHANGE_THIS'
+          echo ::set-output name=TARGET_COMMIT_SHA::${{ github.event.pull_request.head.sha }}
+          echo ::set-output name=APP_ENV::dev
+          echo ::set-output name=GCR_REPO_HOST::asia.gcr.io
+
+          if ${{ github.event.pull_request.merged }}
+          then
+            echo ::set-output name=TARGET_COMMIT_SHA::${{ github.sha }}
+            echo ::set-output name=GCP_PROJECT::'PLEASE_CHANGE_THIS'
+            echo ::set-output name=GKE_CLUSTER_NAME::'PLEASE_CHANGE_THIS'
+            echo ::set-output name=GKE_CLUSTER_ZONE::'PLEASE_CHANGE_THIS'
+            echo ::set-output name=KEY_SERVICE_ACCOUNT::'PLEASE_CHANGE_THIS'
+            echo ::set-output name=APP_NAME::'PLEASE_CHANGE_THIS'
+            echo ::set-output name=APP_ENV::prod
+          fi
+  read_pr:
+    needs: set_constant
+    name: Read pull request
+    runs-on: ubuntu-latest
+    if: |
+      (contains(github.event.pull_request.labels.*.name, needs.set_constant.outputs.LABEL_DEV) && github.event.pull_request.merged == false)
+      || (github.base_ref == 'main' && github.event.pull_request.merged == true)
+    outputs:
+      pr_id: ${{ github.event.pull_request.id }}
+      pr_number: ${{ github.event.pull_request.number }}
+      version: ${{ steps.data.outputs.version }}
+      release_body: ${{  steps.data.outputs.release_body }}
+      release_name: ${{  steps.data.outputs.release_name }}
+    steps:
+      - name: Read pull request body
+        uses: kkurno/action-markdown-reader@v0.1.0
+        id: markdown
+        with:
+          markdown: ${{ github.event.pull_request.body }}
+      - name: Set data
+        id: data
+        run: |-
+          markdown_data_json=${{ toJSON(steps.markdown.outputs.data) }}
+
+          echo ::set-output name=version::`echo $markdown_data_json | jq '.Release.subheader.Version.bodies[0].text' | sed -r -E 's/\"//g'`
+          echo ::set-output name=release_name::`echo $markdown_data_json | jq '.Release.bodies[0].text'`
+          echo ::set-output name=release_body::`echo $markdown_data_json | jq '.Release.subheader.Metadata.bodies[0].text' | sed -r -E 's/\"//g'`
+  build_push_release:
+    needs: [set_constant, read_pr]
+    runs-on: ubuntu-latest
+    name: "Build|Push|Release [${{ needs.set_constant.outputs.APP_ENV }}-${{ needs.set_constant.outputs.APP_NAME }}]"
+    steps:
+      - name: Checkout to sha ${{ needs.set_constant.outputs.TARGET_COMMIT_SHA }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.set_constant.outputs.TARGET_COMMIT_SHA }}
+      - name: 'Authenticate to GCloud'
+        id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets[needs.set_constant.outputs.KEY_SERVICE_ACCOUNT] }}'
+      - name: Setup GCloud
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: '390.0.0'
+      - name: Configure Docker
+        run: |-
+          gcloud --quiet auth configure-docker
+      - name: Set GCR repository name
+        id: gcr
+        run: |-
+          repo="${{ needs.set_constant.outputs.GCR_REPO_HOST }}/${{ needs.set_constant.outputs.GCP_PROJECT }}/${{ needs.set_constant.outputs.APP_NAME }}"
+          repo_with_tag_latest="${repo}:latest"
+          repo_with_tag_env="${repo}:${{ needs.set_constant.outputs.APP_ENV }}"
+          repo_with_tag_version="${repo}:${{ needs.read_pr.outputs.version }}"
+          repo_with_tag_pr_id="${repo}:pr-id-${{ needs.read_pr.outputs.pr_id }}"
+          repo_with_tag_pr_number="${repo}:pr-number-${{ needs.read_pr.outputs.pr_number }}"
+          repo_with_tag_commit_sha="${repo}:commit-sha-${{ needs.set_constant.outputs.TARGET_COMMIT_SHA }}"
+          echo ::set-output name=repo::$repo
+          echo ::set-output name=repo_with_tag_latest::$repo_with_tag_latest
+          echo ::set-output name=repo_with_tag_env::$repo_with_tag_env
+          echo ::set-output name=repo_with_tag_version::$repo_with_tag_version
+          echo ::set-output name=repo_with_tag_pr_id::$repo_with_tag_pr_id
+          echo ::set-output name=repo_with_tag_pr_number::$repo_with_tag_pr_number
+          echo ::set-output name=repo_with_tag_commit_sha::$repo_with_tag_commit_sha
+      - name: Set up Docker BuildX
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.gcr.outputs.repo_with_tag_latest }}
+            ${{ steps.gcr.outputs.repo_with_tag_env }}
+            ${{ steps.gcr.outputs.repo_with_tag_version }}
+            ${{ steps.gcr.outputs.repo_with_tag_pr_id }}
+            ${{ steps.gcr.outputs.repo_with_tag_pr_number }}
+            ${{ steps.gcr.outputs.repo_with_tag_commit_sha }}
+          build-args: |
+            APP_ENV=${{ needs.set_constant.outputs.APP_ENV }}
+  github_release:
+    needs: [set_constant, read_pr, build_push_release]
+    runs-on: [ubuntu-latest]
+    name: "Release Versioning"
+    if: github.base_ref == 'main' && github.event.pull_request.merged == true
+    steps:
+      - name: Create tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ needs.read_pr.outputs.version }}',
+              sha: context.sha
+            })
+      - name: Create Release
+        id: tag_and_release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ needs.read_pr.outputs.version }}',
+              name: '${{ needs.read_pr.outputs.version }}',
+              body: '${{ needs.read_pr.outputs.release_body }}'
+            })
+  notify_slack:
+    needs: [set_constant, read_pr, build_push_release]
+    runs-on: ubuntu-latest
+    name: "Notify Build Result to Slack"
+    if: always()
+    steps:
+      - name: Determine status
+        id: status
+        run: |-
+          if ${{ contains(join(needs.*.result, ','), 'failure') }}
+          then
+            echo ::set-output name=value::failure
+          elif ${{ contains(join(needs.*.result, ','), 'cancelled') }}
+          then
+            echo ::set-output name=value::cancelled
+          elif ${{ contains(join(needs.*.result, ','), 'skipped') }}
+          then
+            echo ::set-output name=value::skipped
+          else
+            echo ::set-output name=value::success
+          fi
+      - name: Notify Job Status to Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ steps.status.outputs.value }}
+          fields: repo,commit,author,workflow
+          mention: 'channel'
+          if_mention: failure
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()

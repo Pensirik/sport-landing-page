@@ -1,0 +1,52 @@
+name: PR Version Suggestion
+
+on:
+  pull_request:
+    types: [opened]
+    branches-ignore:
+      - "dependabot/**"
+      - "snyk-fix-**"
+
+jobs:
+  create_pr_comment:
+    name: Create PR Comment for Suggestion Version
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Get Latest Tag
+        id: latest_tag
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            function getPossibleNextVersion(latestVersion) {
+              const [major, minor, patch] = latestVersion.replace('v', '').split('.').map(x => parseInt(x));
+              return [
+                `**Major**: v${major + 1}.0.0`,
+                `**Minor**: v${major}.${minor + 1}.0`,
+                `**Fix Bug**: v${major}.${minor}.${patch + 1}`,
+              ].join('\n');
+            }
+            const tags = await github.rest.git.listMatchingRefs({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'tags/v',
+            });
+            if (tags.data.length === 0) {
+              return '**First Release**: v1.0.0';
+            }
+            const latestTag = tags.data[tags.data.length - 1];
+            const latestVersion = latestTag.ref.replace('refs/tags/', '');
+            return getPossibleNextVersion(latestVersion);
+      - name: Create PR Comment
+        id: comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `
+            ## Suggest Version for this PR
+            ${{ steps.latest_tag.outputs.result }}`
+            });

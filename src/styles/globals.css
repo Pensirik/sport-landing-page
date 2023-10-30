@@ -1,0 +1,46 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import './loading-component.css';
+
+@layer base {
+  html, body, body, div#__next {
+    @apply h-full w-full font-roboto;
+  }
+}
+.line-height-normal
+{
+  line-height: normal;
+}
+.header {
+  @apply  text-[50px] md:text-[90px] text-typo-header font-normal font-roboto;
+} 
+.title {
+  @apply  text-[28px] md:text-[36px] line-height-normal md:leading-[42.19px] text-typo-title tracking-[1.5px] font-roboto;
+}
+.detail {
+  @apply  text-[15px] md:text-[18px] xl:text-[20px] line-height-normal md:leading-[28px] font-normal font-roboto;
+}
+
+
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-slide {
+  text-align: left;
+  /* Center slide text vertically */
+  display: flex;
+  /* justify-content: center; */
+  align-items: center;
+}
+.swiper-horizontal > .swiper-pagination-bullets, .swiper-pagination-bullets.swiper-pagination-horizontal {
+  bottom: var(--swiper-pagination-bottom, 30px) !important;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: var(--swiper-pagination-bullet-opacity, 1);
+  background: #5E3DB3 !important;
+}
