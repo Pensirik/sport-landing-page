@@ -8,12 +8,12 @@
 
 ### You can see results
 
-1. Desktop 
+### 1. Desktop 
 ![alt text](https://github.com/Pensirik/sport-landing-page/blob/main/public/images/desktop.png?raw=true)
 
-2. Tablet
+### 2. Tablet
 ![alt text](https://github.com/Pensirik/sport-landing-page/blob/main/public/images/tablet.png?raw=true)
 
-3. mobile
+### 3. mobile
 ![alt text](https://github.com/Pensirik/sport-landing-page/blob/main/public/images/mobile.png?raw=true)
 
