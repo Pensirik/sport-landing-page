@@ -6,7 +6,7 @@
 ###  First, run the development server:
  2. npm run dev
 
-### You can see results
+## You can see results
 
 ### 1. Desktop 
 ![alt text](https://github.com/Pensirik/sport-landing-page/blob/main/public/images/desktop.png?raw=true)
