@@ -8,7 +8,7 @@ const Player = () => {
       <div className="w-full relative hidden md:block">
         <div>
           <img src="/images/graphic2-desktop.png" className="hidden xl:block top-0 right-0 2xl:right-[125px] absolute h-[815px] 2xl:h-[840px] z-50" alt="player1" />
-          <img src="/images/graphic2-tablet.png" className="hidden xl:hidden md:block md:top-[53px] top-0 right-0  absolute  z-50" alt="player1" />
+          <img src="/images/graphic2-tablet.png" className="hidden xl:hidden md:block md:top-[33px] top-0 right-0  absolute  z-50" alt="player1" />
         </div>
         <div className="flex flex-col w-full h-full">
           <section className="w-full flex bg-white">
