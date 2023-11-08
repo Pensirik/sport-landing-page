@@ -36,7 +36,7 @@
     "@next/bundle-analyzer": "^13.5.3",
     "@types/node": "^18.11.18",
     "@types/react": "18.0.17",
-    "autoprefixer": "^10.4.14",
+    "autoprefixer": "^10.4.16",
     "eslint": "^8.42.0",
     "eslint-config-next": "12.2.4",
     "eslint-config-oci-react": "https://github.com/orangecapinnovative/eslint-config-oci-react.git#v0.3.0",
