@@ -136,7 +136,7 @@ jobs:
     if: github.base_ref == 'main' && github.event.pull_request.merged == true
     steps:
       - name: Create tag
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.git.createRef({
@@ -147,7 +147,7 @@ jobs:
             })
       - name: Create Release
         id: tag_and_release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.repos.createRelease({
