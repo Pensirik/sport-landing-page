@@ -87,7 +87,7 @@ jobs:
         with:
           credentials_json: '${{ secrets[needs.set_constant.outputs.KEY_SERVICE_ACCOUNT] }}'
       - name: Setup GCloud
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: '390.0.0'
       - name: Configure Docker
